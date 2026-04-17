@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCertificates } from '../context/CertificateContext';
 import { useUsers } from '../context/UserContext';
-import { Shield, LayoutDashboard, UserCheck, Lock } from 'lucide-react';
+import { Shield, LayoutDashboard, UserCheck, Lock, ExternalLink, FileSearch, Trash2 } from 'lucide-react';
 
 const AdminLogin = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
@@ -64,8 +64,21 @@ const AdminLogin = ({ setLoggedIn }) => {
 }
 
 const AdminDashboard = ({ setLoggedIn }) => {
-  const { certificates, updateCertificateStatus } = useCertificates();
+  const { certificates, updateCertificateStatus, deleteCertificate, updateCertificate } = useCertificates();
   const { users, updateUser, deleteUser } = useUsers();
+  
+  const handleEditCert = (cert) => {
+    const newOwner = prompt("Edit Owner Name:", cert.owner);
+    const newZone = prompt("Edit Zone:", cert.zone);
+    const newArea = prompt("Edit Area:", cert.area);
+    if (newOwner || newZone || newArea) {
+      updateCertificate(cert.id, {
+        owner: newOwner || cert.owner,
+        zone: newZone || cert.zone,
+        area: newArea || cert.area
+      });
+    }
+  }
   
   useEffect(() => {
     const token = localStorage.getItem("tdr_admin_token");
@@ -125,7 +138,20 @@ const AdminDashboard = ({ setLoggedIn }) => {
                 {certificates.map((tdr, i) => (
                   <tr key={tdr.id || i}>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{tdr.id}</td>
-                    <td style={{ fontWeight: 500 }}>{tdr.owner}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      {tdr.owner}
+                      {tdr.filepath && (
+                         <a 
+                           href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${tdr.filepath}`} 
+                           target="_blank" 
+                           rel="noreferrer"
+                           style={{ marginLeft: '10px', color: '#666', textDecoration: 'none' }}
+                           title="View uploaded document"
+                         >
+                           <ExternalLink size={14} />
+                         </a>
+                      )}
+                    </td>
                     <td style={{ color: 'var(--text-muted)' }}>{tdr.aadhaar || 'N/A'}</td>
                     <td>{tdr.zone} <br/> <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)'}}>{tdr.area}</span></td>
                     <td>
@@ -134,7 +160,7 @@ const AdminDashboard = ({ setLoggedIn }) => {
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button 
                           className="btn-secondary" 
                           style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: tdr.status === 'Verified' ? 'var(--success-bg)' : undefined, color: tdr.status === 'Verified' ? 'var(--success)' : undefined }}
@@ -150,6 +176,29 @@ const AdminDashboard = ({ setLoggedIn }) => {
                           disabled={tdr.status === 'Rejected'}
                         >
                           Reject
+                        </button>
+                        <button 
+                          className="btn-secondary" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#e2e8f0' }}
+                          onClick={() => handleEditCert(tdr)}
+                        >
+                          Edit
+                        </button>
+                        {tdr.filepath && (
+                          <button 
+                             className="btn-secondary" 
+                             style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#edf2f7' }}
+                             onClick={() => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${tdr.filepath}`, '_blank')}
+                          >
+                             View Doc
+                          </button>
+                        )}
+                        <button 
+                          className="btn-secondary" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)' }}
+                          onClick={() => { if(window.confirm('Delete this certificate permanently?')) deleteCertificate(tdr.id); }}
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -209,6 +258,49 @@ const AdminDashboard = ({ setLoggedIn }) => {
                 ))}
               </tbody>
             </table>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: '2rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
+        <div className="card-header">
+          <h2 style={{ margin: 0 }}>Electronic Document Vault</h2>
+        </div>
+        <div className="card-body" style={{ padding: 0 }}>
+           <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th>TDR Reference</th>
+                  <th>Filename</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {certificates.filter(c => c.filepath).map((c, i) => (
+                  <tr key={c.id || i}>
+                    <td style={{ fontWeight: 600 }}>{c.id}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{c.filename || 'uploaded_document.pdf'}</td>
+                    <td>
+                       <div style={{ display: 'flex', gap: '1rem' }}>
+                          <button 
+                            className="btn-secondary" 
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#ebf8ff', color: '#2b6cb0' }}
+                            onClick={() => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${c.filepath}`, '_blank')}
+                          >
+                             <FileSearch size={16} /> Open Proof
+                          </button>
+                          <button 
+                            className="btn-secondary" 
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff5f5', color: '#c53030' }}
+                            onClick={() => { if(window.confirm('Purge this document from server?')) deleteCertificate(c.id); }}
+                          >
+                             <Trash2 size={16} /> Purge
+                          </button>
+                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+           </table>
         </div>
       </div>
     </div>

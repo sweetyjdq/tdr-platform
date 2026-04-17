@@ -70,6 +70,8 @@ const UploadCertificate = () => {
           zone: formData.zone,
           area: formData.area || 'Unknown Area',
           status: 'Pending',
+          filename: data.filename,
+          filepath: data.path,
           date: new Date().toISOString().split('T')[0]
         });
       } else {

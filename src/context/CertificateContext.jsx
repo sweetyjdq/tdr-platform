@@ -12,22 +12,74 @@ export const CertificateProvider = ({ children }) => {
     ];
   });
 
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const defaultApiUrl = isLocalhost ? 'http://localhost:5000/api' : `${window.location.origin}/api`;
+  const apiUrl = import.meta.env.VITE_API_URL && isLocalhost ? import.meta.env.VITE_API_URL : defaultApiUrl;
+
   useEffect(() => {
     localStorage.setItem('tdr_certificates', JSON.stringify(certificates));
   }, [certificates]);
 
-  const addCertificate = (cert) => {
-    setCertificates(prev => [cert, ...prev]);
+  useEffect(() => {
+    fetch(`${apiUrl}/certificates`)
+      .then(res => res.json())
+      .then(data => {
+        if(data && data.length > 0) setCertificates(data);
+      })
+      .catch(err => console.error("Sync failed:", err));
+  }, []);
+
+  const addCertificate = async (cert) => {
+    try {
+      const res = await fetch(`${apiUrl}/certificates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cert)
+      });
+      if (res.ok) {
+        const newCert = await res.json();
+        setCertificates(prev => [newCert, ...prev]);
+      }
+    } catch (e) {
+      setCertificates(prev => [cert, ...prev]);
+    }
   };
 
-  const updateCertificateStatus = (id, newStatus) => {
+  const updateCertificateStatus = async (id, newStatus) => {
     setCertificates(prev => 
       prev.map(cert => cert.id === id ? { ...cert, status: newStatus } : cert)
     );
+    try {
+      await fetch(`${apiUrl}/certificates/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch (e) { console.error("Update failed", e); }
   };
 
+  const updateCertificate = async (id, updatedData) => {
+    setCertificates(prev => 
+      prev.map(cert => cert.id === id ? { ...cert, ...updatedData } : cert)
+    );
+    try {
+      await fetch(`${apiUrl}/certificates/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      });
+    } catch (e) { console.error("Update failed", e); }
+  }
+
+  const deleteCertificate = async (id) => {
+    setCertificates(prev => prev.filter(cert => cert.id !== id));
+    try {
+      await fetch(`${apiUrl}/certificates/${id}`, { method: 'DELETE' });
+    } catch (e) { console.error("Delete failed", e); }
+  }
+
   return (
-    <CertificateContext.Provider value={{ certificates, addCertificate, updateCertificateStatus }}>
+    <CertificateContext.Provider value={{ certificates, addCertificate, updateCertificateStatus, updateCertificate, deleteCertificate }}>
       {children}
     </CertificateContext.Provider>
   );

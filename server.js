@@ -107,11 +107,13 @@ const useDb = async () => {
 };
 
 let dbMode = false;
+// Create users & certificates table if not exists with connection check
 const initDb = async () => {
     dbMode = await useDb();
     if (dbMode) {
         try {
-            await pool.query(`
+            const client = await pool.connect();
+            await client.query(`
                 CREATE TABLE IF NOT EXISTS users (
                     id TEXT PRIMARY KEY,
                     name TEXT,
@@ -120,9 +122,21 @@ const initDb = async () => {
                     password TEXT,
                     status TEXT DEFAULT 'Active',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
+                );
+                CREATE TABLE IF NOT EXISTS certificates (
+                    id TEXT PRIMARY KEY,
+                    owner TEXT,
+                    aadhaar TEXT,
+                    zone TEXT,
+                    area TEXT,
+                    status TEXT DEFAULT 'Pending',
+                    filename TEXT,
+                    filepath TEXT,
+                    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
             `);
-            console.log("✅ Using PostgreSQL Storage");
+            client.release();
+            console.log("✅ PostgreSQL Tables initialized");
         } catch (e) {
             console.error("❌ Table creation failed, falling back to file/memory");
             dbMode = false;
@@ -136,6 +150,7 @@ const initDb = async () => {
 };
 initDb();
 
+// ─── USER ROUTES ──────────────────────────────────────────────────
 app.get('/api/users', async (req, res) => {
     if (dbMode) {
         try {
@@ -150,39 +165,22 @@ app.post('/api/users/register', async (req, res) => {
   try {
     const { email, name, mobile, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email/Pass required" });
-
     const userId = `USR-${Math.floor(1000 + Math.random() * 9000)}`;
     const normalizedEmail = email.toLowerCase().trim();
-
     if (dbMode) {
         try {
             const check = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [normalizedEmail]);
             if (check.rows.length > 0) return res.status(409).json({ error: "Email already registered" });
-            
-            const r = await pool.query(
-                'INSERT INTO users (id, name, mobile, email, password, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-                [userId, name, mobile, normalizedEmail, password, 'Active']
-            );
+            const r = await pool.query('INSERT INTO users (id, name, mobile, email, password, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [userId, name, mobile, normalizedEmail, password, 'Active']);
             return res.json(r.rows[0]);
-        } catch (err) {
-            console.error("DB Register Error:", err.message);
-            dbMode = false; 
-        }
+        } catch { dbMode = false; }
     }
-
-    // Memory/File Fallback
-    if (memoryUsers.find(u => u.email?.toLowerCase().trim() === normalizedEmail)) {
-        return res.status(409).json({ error: "Email already registered" });
-    }
+    if (memoryUsers.find(u => u.email?.toLowerCase().trim() === normalizedEmail)) return res.status(409).json({ error: "Email already registered" });
     const newUser = { id: userId, name, mobile, email: normalizedEmail, password, status: 'Active' };
     memoryUsers.unshift(newUser);
-    if (!process.env.VERCEL) {
-        try { fs.writeFileSync(dataPath, JSON.stringify(memoryUsers, null, 2)); } catch {}
-    }
+    if (!process.env.VERCEL) fs.writeFileSync(dataPath, JSON.stringify(memoryUsers, null, 2));
     res.json(newUser);
-  } catch(e) {
-    res.status(500).json({error: "Registration failed"});
-  }
+  } catch(e) { res.status(500).json({error: "Registration failed"}); }
 });
 
 app.put('/api/users/:id', async (req, res) => {
@@ -194,23 +192,83 @@ app.put('/api/users/:id', async (req, res) => {
         } catch { dbMode = false; }
     }
     const idx = memoryUsers.findIndex(u => u.id === req.params.id);
-    if (idx !== -1) {
-        memoryUsers[idx] = { ...memoryUsers[idx], ...req.body };
-        if (!process.env.VERCEL) fs.writeFileSync(dataPath, JSON.stringify(memoryUsers, null, 2));
-    }
+    if (idx !== -1) { memoryUsers[idx] = { ...memoryUsers[idx], ...req.body }; if (!process.env.VERCEL) fs.writeFileSync(dataPath, JSON.stringify(memoryUsers, null, 2)); }
     res.json({success: true});
 });
 
 app.delete('/api/users/:id', async (req, res) => {
     if (dbMode) {
-        try {
-            await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
-            return res.json({success: true});
-        } catch { dbMode = false; }
+        try { await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]); return res.json({success: true}); } catch { dbMode = false; }
     }
     memoryUsers = memoryUsers.filter(u => u.id !== req.params.id);
     if (!process.env.VERCEL) fs.writeFileSync(dataPath, JSON.stringify(memoryUsers, null, 2));
     res.json({success: true});
+});
+
+// ─── CERTIFICATE (TDR) ROUTES ──────────────────────────────────────────
+let memoryCerts = [
+    { id: 'TDR-2023-8941', owner: 'Ramesh Kumar', aadhaar: '3456-7890-1234', zone: 'North Zone', area: '1250 sqft', status: 'Verified', date: '2023-10-24' },
+    { id: 'TDR-2023-8940', owner: 'Priya Builders Pvt Ltd', aadhaar: '8901-2345-6789', zone: 'East Zone', area: '4500 sqft', status: 'Pending', date: '2023-10-23' }
+];
+
+app.get('/api/certificates', async (req, res) => {
+    if (dbMode) {
+        try { const r = await pool.query('SELECT * FROM certificates ORDER BY date DESC'); return res.json(r.rows); } catch { dbMode = false; }
+    }
+    res.json(memoryCerts);
+});
+
+app.post('/api/certificates', async (req, res) => {
+    const cert = { ...req.body, date: new Date().toISOString() };
+    if (dbMode) {
+        try {
+            await pool.query('INSERT INTO certificates (id, owner, aadhaar, zone, area, status, filename, filepath) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', 
+            [cert.id, cert.owner, cert.aadhaar, cert.zone, cert.area, cert.status || 'Pending', cert.filename, cert.filepath]);
+            return res.json(cert);
+        } catch { dbMode = false; }
+    }
+    memoryCerts.unshift(cert);
+    res.json(cert);
+});
+
+app.put('/api/certificates/:id', async (req, res) => {
+    if (dbMode) {
+        try {
+            const { owner, zone, area, status } = req.body;
+            await pool.query('UPDATE certificates SET owner=$1, zone=$2, area=$3, status=$4 WHERE id=$5', [owner, zone, area, status, req.params.id]);
+            return res.json({success: true});
+        } catch { dbMode = false; }
+    }
+    const idx = memoryCerts.findIndex(c => c.id === req.params.id);
+    if (idx !== -1) memoryCerts[idx] = { ...memoryCerts[idx], ...req.body };
+    res.json({success: true});
+});
+
+app.delete('/api/certificates/:id', async (req, res) => {
+    try {
+        let cert;
+        if (dbMode) {
+            const r = await pool.query('SELECT filepath FROM certificates WHERE id = $1', [req.params.id]);
+            cert = r.rows[0];
+            await pool.query('DELETE FROM certificates WHERE id = $1', [req.params.id]);
+        } else {
+            cert = memoryCerts.find(c => c.id === req.params.id);
+            memoryCerts = memoryCerts.filter(c => c.id !== req.params.id);
+        }
+
+        // Physically delete file from uploads folder if it exists
+        if (cert && cert.filepath) {
+            const fullPath = path.join(basePath, cert.filepath);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath);
+                console.log(`🗑️ Physically deleted file: ${fullPath}`);
+            }
+        }
+        res.json({success: true});
+    } catch (e) {
+        console.error("Delete error:", e);
+        res.status(500).json({error: "Failed to delete"});
+    }
 });
 
 // Mock Database of Admin
