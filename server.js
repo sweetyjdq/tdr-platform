@@ -14,32 +14,34 @@ import { verifyToken } from './middleware/auth.js';
 // Load environment variables from .env
 dotenv.config();
 
-// ─── Verify SMTP config on startup ───────────────────────────────
-const smtpConfigured = process.env.SMTP_USER && 
-  process.env.SMTP_PASS &&
-  !process.env.SMTP_USER.includes('your_gmail') &&
-  !process.env.SMTP_PASS.includes('your_16_char');
-
-if (!smtpConfigured) {
-  console.warn('⚠️  SMTP not configured — edit .env and set SMTP_USER + SMTP_PASS');
-} else {
-  // Quick verify transporter
-  const testTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+// ─── SMTP TRANSPORTER SETUP ──────────────────────────────────────
+const transporter = nodemailer.createTransport(
+  process.env.SMTP_HOST ? {
+    host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    tls: { rejectUnauthorized: false }
-  });
-  testTransporter.verify((error) => {
-    if (error) {
-      console.error('❌ SMTP Connection FAILED:', error.message);
-      console.error('   → Check SMTP_USER and SMTP_PASS in your .env file');
-    } else {
-      console.log(`✅ SMTP ready — emails will be sent from: ${process.env.SMTP_USER}`);
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    },
+    tls: { rejectUnauthorized: false } // Helps with connection blocks on Cloud providers
+  } : {
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
     }
-  });
-}
+  }
+);
+
+// Verify transporter connection on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ SMTP Connection Error:", error.message);
+  } else {
+    console.log("✅ SMTP ready to dispatch emails from:", process.env.SMTP_USER);
+  }
+});
 
 // Setup __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -365,19 +367,6 @@ app.post('/api/send-email', async (req, res) => {
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
     const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -484,15 +473,12 @@ app.post('/api/send-alert', async (req, res) => {
     return res.status(500).json({ error: "SMTP credentials missing." });
   }
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      tls: { rejectUnauthorized: false }
-    });
+// Generic Notification Alert endpoint using Nodemailer
+app.post('/api/send-alert', async (req, res) => {
+  const { recipient, title, message } = req.body;
+  console.log(`📧 Sending Alert Notification to: ${recipient} | Title: ${title}`);
 
+  try {
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f6f9;">
         <div style="max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
