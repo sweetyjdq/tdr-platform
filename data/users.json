@@ -1,5 +1,13 @@
 [
   {
+    "id": "USR-2200",
+    "name": "sweety",
+    "mobile": "9832944374",
+    "email": "sweetyalley2@gmail.com",
+    "password": "Sweety@123",
+    "status": "Active"
+  },
+  {
     "name": "karan",
     "mobile": "23456789",
     "email": "karan@jadequest.com",

@@ -81,10 +81,15 @@ app.use(cors());
 
 import pg from 'pg';
 
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.VERCEL ? { rejectUnauthorized: false } : false
-});
+let pool = null;
+if (process.env.DATABASE_URL) {
+  pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.VERCEL ? { rejectUnauthorized: false } : false
+  });
+} else {
+  console.log("ℹ️ No DATABASE_URL found. Running in Local Memory Mode.");
+}
 
 // Fallback users (in-memory) for Vercel if DB fails
 let memoryUsers = [
@@ -144,7 +149,7 @@ const initDb = async () => {
             dbMode = false;
         }
     } else {
-        console.warn("⚠️ Database unavailable. Using Local/Memory fallback.");
+        console.log("ℹ️ Persistence: Local Data Fallback only.");
         if (fs.existsSync(dataPath)) {
             try { memoryUsers = JSON.parse(fs.readFileSync(dataPath, 'utf8')); } catch {}
         }
@@ -458,25 +463,28 @@ app.post('/api/send-email', async (req, res) => {
     console.log(`✅ Email OTP sent to ${to} | Message ID: ${info.messageId}`);
     res.status(200).json({ message: "Email OTP sent successfully!" });
   } catch (error) {
-    console.error("❌ Nodemailer Error:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("❌ Nodemailer Error:", error.name, error.message);
+    let errorMsg = error.message;
+    if (error.code === 'EAUTH') errorMsg = "SMTP Authentication Failed. Check your App Password.";
+    if (error.code === 'ECONNREFUSED') errorMsg = "Could not connect to SMTP server. Check your SMTP_HOST.";
+    
+    res.status(500).json({ 
+      error: errorMsg,
+      details: error.message,
+      hint: "Ensure 2-Step Verification is ON and you are using a 16-character App Password." 
+    });
   }
 });
 
 // Generic Notification Alert endpoint using Nodemailer
 app.post('/api/send-alert', async (req, res) => {
-  const { title, message, to } = req.body;
-  const recipient = to || process.env.SMTP_USER;
-  console.log(`📧 Sending Alert Notification to: ${recipient} | Title: ${title}`);
+  const { recipient, title, message } = req.body;
+  const to = recipient || process.env.SMTP_USER;
+  console.log(`📧 Sending Alert Notification to: ${to} | Title: ${title}`);
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     return res.status(500).json({ error: "SMTP credentials missing." });
   }
-
-// Generic Notification Alert endpoint using Nodemailer
-app.post('/api/send-alert', async (req, res) => {
-  const { recipient, title, message } = req.body;
-  console.log(`📧 Sending Alert Notification to: ${recipient} | Title: ${title}`);
 
   try {
     const htmlBody = `
@@ -496,13 +504,13 @@ app.post('/api/send-alert', async (req, res) => {
 
     const info = await transporter.sendMail({
       from: `"SMC e-TDR Alerts" <${process.env.SMTP_USER}>`,
-      to: recipient,
+      to: to,
       subject: `TDR Alert: ${title}`,
       text: `${title}\n\n${message}`,
       html: htmlBody
     });
 
-    console.log(`✅ Alert Email sent to ${recipient}`);
+    console.log(`✅ Alert Email sent to ${to}`);
     res.status(200).json({ message: "Alert email sent successfully!" });
   } catch (error) {
     console.error("❌ Nodemailer Error:", error.message);
@@ -534,11 +542,9 @@ app.get('/api/admin/data', verifyToken, (req, res) => {
     res.json({ message: "Access Granted to encrypted TDR Admin Base", user: req.user });
 });
 
-const PORT = 5000;
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  app.listen(PORT, () => {
-      console.log(`🚀 Authentication Backend Server running securely on http://localhost:${PORT}`);
-  });
-}
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`🚀 Authentication Backend Server running on http://localhost:${PORT}`);
+});
 
 export default app;

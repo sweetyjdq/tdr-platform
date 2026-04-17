@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"node server.js\" \"vite\"",
-    "server": "node server.js",
+    "dev": "concurrently \"node server.mjs\" \"vite\"",
+    "server": "node server.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

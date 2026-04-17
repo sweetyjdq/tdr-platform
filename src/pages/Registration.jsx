@@ -29,9 +29,11 @@ const Registration = () => {
 
   const [captchaText, setCaptchaText] = useState(generateCaptcha());
   const [expectedEmailOtp, setExpectedEmailOtp] = useState('');
+  const [isEmailOtpSent, setIsEmailOtpSent] = useState(false);
 
   const handleSendEmailOtp = async () => {
-    if (!formData.email || !formData.email.includes('@')) {
+    const emailToCheck = formData.email.toLowerCase().trim();
+    if (!emailToCheck || !emailToCheck.includes('@')) {
       alert("Please enter a valid email address first.");
       return;
     }
@@ -77,10 +79,22 @@ const Registration = () => {
       });
       
       if (response.ok) {
-        alert("Email OTP sent successfully to your inbox!");
+        setIsEmailOtpSent(true);
+        setFormData(prev => ({ ...prev, emailOtp: '' }));
+        alert("OTP is sent successfully to your email");
+
+        // ALSO Send SMS notification (Simulation or Real depending on Twilio config)
+        try {
+          fetch(`${apiUrl}/send-sms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: formData.mobile, otp: generatedOtp })
+          });
+        } catch (sErr) { console.error("SMS skip:", sErr); }
+
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert(`Failed to send real Email: ${errorData.error || response.statusText}. Please check your SMTP credentials in the backend server!`);
+        const data = await response.json().catch(() => ({}));
+        alert(`Email Error: ${data.error || 'Failed'}\n\nHint: ${data.hint || ''}`);
       }
     } catch (err) {
       console.error("Backend connection error:", err);
@@ -108,6 +122,11 @@ const Registration = () => {
       loginUser(user);
       alert("Login successful! Welcome back.");
       navigate("/");
+      return;
+    }
+
+    if (!isLoginMode && /^\d+$/.test(formData.name.trim())) {
+      alert("Error: Please enter your Full Name, not your Mobile Number in the 'Name' field.");
       return;
     }
 
@@ -221,8 +240,21 @@ const Registration = () => {
                 <input type="email" name="email" required value={formData.email} onChange={handleChange} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }} />
               </div>
               {!isLoginMode && (
-                <button type="button" onClick={handleSendEmailOtp} className="btn-primary" style={{ backgroundColor: '#0D6EFD', padding: '0.5rem 1rem', height: '38px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
-                  Send OTP
+                <button 
+                  type="button" 
+                  onClick={handleSendEmailOtp} 
+                  disabled={isEmailOtpSent}
+                  className="btn-primary" 
+                  style={{ 
+                    backgroundColor: isEmailOtpSent ? '#6c757d' : '#0D6EFD', 
+                    padding: '0.5rem 1rem', 
+                    height: '38px', 
+                    borderRadius: '4px', 
+                    whiteSpace: 'nowrap',
+                    cursor: isEmailOtpSent ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isEmailOtpSent ? 'OTP Sent' : 'Send OTP'}
                 </button>
               )}
             </div>
@@ -230,8 +262,18 @@ const Registration = () => {
             {/* Email OTP */}
             {!isLoginMode && (
               <div className="form-group">
-                <label className="label">Email OTP <span style={{ color: 'red' }}>*</span></label>
-                <input type="text" name="emailOtp" required={!isLoginMode} value={formData.emailOtp} onChange={handleChange} placeholder="Email OTP" style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }} />
+                <label className="label" style={{ color: isEmailOtpSent ? '#2e7d32' : 'inherit' }}>
+                  {isEmailOtpSent ? '✓ Enter Code From Email' : 'Email OTP'} <span style={{ color: 'red' }}>*</span>
+                </label>
+                <input 
+                  type="text" 
+                  name="emailOtp" 
+                  required={!isLoginMode} 
+                  value={formData.emailOtp} 
+                  onChange={handleChange} 
+                  placeholder={isEmailOtpSent ? "Check your inbox..." : "Enter 6-digit code"} 
+                  style={{ width: '100%', padding: '0.5rem', border: isEmailOtpSent ? '2px solid #2e7d32' : '1px solid #ccc', borderRadius: '4px' }} 
+                />
               </div>
             )}
 

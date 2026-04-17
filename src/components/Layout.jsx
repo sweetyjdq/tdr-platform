@@ -18,6 +18,7 @@ import {
   Mail,
   CheckCircle2,
   ArrowRightLeft,
+  Lock,
 } from 'lucide-react';
 
 import smcLogo from '../assets/smc_logo.png';
@@ -434,6 +435,7 @@ const NotificationBell = ({ popups, addPopup, closePopup }) => {
     }
   };
 
+  /*
   // Auto-dispatch entire digest natively once per session as soon as they load the portal
   useEffect(() => {
     const sentKey = `tdr_digest_sent_${currentUser?.email || 'default'}`;
@@ -460,6 +462,7 @@ const NotificationBell = ({ popups, addPopup, closePopup }) => {
       }).catch(err => console.error('Failed to send digest email alert:', err));
     }
   }, [currentUser, notifications]);
+  */
 
 
 
@@ -608,7 +611,13 @@ const NotificationBell = ({ popups, addPopup, closePopup }) => {
 const Header = ({ popups, addPopup, closePopup }) => {
   const { admin } = useAdmin();
   const { currentUser, logoutUser } = useUsers();
+  const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem("tdr_admin_token"));
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsAdmin(!!localStorage.getItem("tdr_admin_token"));
+  }, [location.pathname, currentUser]);
 
   return (
     <header className="top-header">
@@ -643,19 +652,32 @@ const Header = ({ popups, addPopup, closePopup }) => {
                   logoutUser();
                   navigate("/");
                 }
+            } else if (isAdmin) {
+                if (window.confirm("Admin Logout?")) {
+                  localStorage.removeItem("tdr_admin_token");
+                  setIsAdmin(false);
+                  navigate("/");
+                }
             } else {
               navigate('/profile');
             }
           }}
         >
-          <div className="avatar">
+          <div className="avatar" style={{ background: (currentUser || isAdmin) ? 'var(--primary-light)' : '#f1f5f9' }}>
             {currentUser 
               ? currentUser.name.charAt(0).toUpperCase()
-              : (admin.photo ? <img src={admin.photo} alt="P" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : admin.initials)}
+              : (isAdmin 
+                  ? (admin.photo ? <img src={admin.photo} alt="P" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : admin.initials)
+                  : <Lock size={16} color="#94a3b8" />
+                )}
           </div>
           <div style={{ lineHeight: 1.3 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)' }}>{currentUser ? currentUser.name : admin.name}</div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>{currentUser ? "Registered User" : admin.designation}</div>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)' }}>
+              {currentUser ? currentUser.name : (isAdmin ? admin.name : "Guest User")}
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              {currentUser ? "Registered User" : (isAdmin ? admin.designation : "Portal Access")}
+            </div>
           </div>
           <ChevronDown size={14} color="var(--text-light)" />
         </div>
@@ -664,7 +686,7 @@ const Header = ({ popups, addPopup, closePopup }) => {
   );
 };
 
-// ─── Gov Banner ───────────────────────────────────────────────────────────────
+// --- Gov Banner ---------------------------------------------------------------
 const GovBanner = () => (
   <div className="gov-banner">
     <ShieldCheck size={13} color="var(--success)" />
