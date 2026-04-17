@@ -9,7 +9,8 @@ const AdminLogin = ({ setLoggedIn }) => {
   
   const handleLogin = (e) => {
     e.preventDefault();
-    if(username === 'admin@tdr.local' && password === 'admin@123') {
+    const lowerUser = username.toLowerCase();
+    if((lowerUser === 'admin@tdr.local' || lowerUser === 'admin@trd.local') && password === 'admin@123') {
       setLoggedIn(true);
     } else {
       alert('Invalid credentials! (hint: admin@tdr.local / admin@123)');

@@ -50,7 +50,9 @@ const UploadCertificate = () => {
       // Append form metadata
       Object.entries(formData).forEach(([key, val]) => formPayload.append(key, val));
 
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const defaultApiUrl = isLocalhost ? 'http://localhost:5000/api' : `${window.location.origin}/api`;
+      const apiUrl = import.meta.env.VITE_API_URL && isLocalhost ? import.meta.env.VITE_API_URL : defaultApiUrl;
       const response = await fetch(`${apiUrl}/upload-certificate`, {
         method: 'POST',
         body: formPayload

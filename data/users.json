@@ -1,0 +1,50 @@
+[
+  {
+    "name": "karan",
+    "mobile": "23456789",
+    "email": "karan@jadequest.com",
+    "password": "karan",
+    "id": "USR-2593",
+    "status": "Active"
+  },
+  {
+    "name": "raj@jadeques",
+    "mobile": "34567",
+    "email": "raj@jadequest.com",
+    "password": "raj",
+    "id": "USR-7417",
+    "status": "Active"
+  },
+  {
+    "name": "hitanshi",
+    "mobile": "234567",
+    "email": "hitanshi@jadequest.com",
+    "password": "hitanshi",
+    "id": "USR-5080",
+    "status": "Active"
+  },
+  {
+    "name": "9832944374",
+    "mobile": "09832944374",
+    "email": "sweetyalley4@gmail.com",
+    "password": "Sweety@123",
+    "id": "USR-1815",
+    "status": "Active"
+  },
+  {
+    "id": "USR-001",
+    "name": "John Doe",
+    "mobile": "9876543210",
+    "email": "john@example.com",
+    "status": "Active",
+    "password": "password123"
+  },
+  {
+    "id": "USR-002",
+    "name": "Ramesh Kumar",
+    "mobile": "8877665544",
+    "email": "ramesh@example.com",
+    "status": "Active",
+    "password": "password123"
+  }
+]
