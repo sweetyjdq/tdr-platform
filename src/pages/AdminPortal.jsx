@@ -1,306 +1,361 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCertificates } from '../context/CertificateContext';
 import { useUsers } from '../context/UserContext';
-import { Shield, LayoutDashboard, UserCheck, Lock, ExternalLink, FileSearch, Trash2 } from 'lucide-react';
+import { 
+  Shield, LayoutDashboard, UserCheck, Lock, 
+  ExternalLink, FileSearch, Trash2, Users, 
+  FileText, CheckCircle, Clock, AlertTriangle, 
+  LogOut, ArrowLeft, Zap, Database, Activity,
+  Settings, Server, Cpu, Globe
+} from 'lucide-react';
+import api from '../api/client';
+import { useNavigate } from 'react-router-dom';
 
 const AdminLogin = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password
-        })
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        // Save token
-        localStorage.setItem("tdr_admin_token", data.token);
-        setLoggedIn(true);
-      } else {
-        alert(data.message || 'Invalid credentials!');
-      }
+      const data = await api.post('/api/login', { username, password });
+      localStorage.setItem("tdr_admin_token", data.token);
+      setLoggedIn(true);
     } catch (err) {
       console.error("Login failed", err);
-      alert("Failed to connect to authentication server!");
+      alert(err.message || "Failed to connect to authentication server!");
+    } finally {
+      setLoading(false);
     }
   }
   
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-      <div className="card" style={{ width: '400px', padding: '2rem', boxShadow: 'var(--shadow-lg)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Shield size={48} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
-          <h2>Admin Login</h2>
-          <p style={{ color: 'var(--text-muted)' }}>System Administrator Access</p>
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '100vh', 
+      background: 'radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%)',
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
+      {/* Background Decorative Elements */}
+      <div style={{ position: 'absolute', width: '600px', height: '600px', background: 'rgba(59, 130, 246, 0.05)', filter: 'blur(100px)', borderRadius: '50%', top: '-100px', left: '-100px' }} />
+      <div style={{ position: 'absolute', width: '400px', height: '400px', background: 'rgba(139, 92, 246, 0.05)', filter: 'blur(100px)', borderRadius: '50%', bottom: '-50px', right: '-50px' }} />
+
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        style={{ width: '450px', zIndex: 10 }}
+      >
+        <div style={{ 
+          background: 'rgba(255, 255, 255, 0.03)', 
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          borderRadius: '32px',
+          padding: '3.5rem',
+          boxShadow: '0 50px 100px -20px rgba(0,0,0,0.5)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div style={{ 
+              width: '90px', 
+              height: '90px', 
+              background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', 
+              borderRadius: '24px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 2rem',
+              boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)'
+            }}>
+              <Shield size={48} color="white" />
+            </div>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Authority Gate</h2>
+            <p style={{ color: '#94a3b8', fontSize: '1rem' }}>Enter credentials for TDR Ledger access</p>
+          </div>
+
+          <form onSubmit={handleLogin}>
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', display: 'block', marginBottom: '0.75rem' }}>ADMINISTRANT IDENTIFIER</label>
+              <input 
+                type="text" 
+                placeholder="ID-8842-X" 
+                value={username} 
+                onChange={e => setUsername(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', color: 'white', fontSize: '1rem' }} 
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: '2.5rem' }}>
+              <label style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', display: 'block', marginBottom: '0.75rem' }}>SECURE ACCESS KEY</label>
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', color: 'white', fontSize: '1rem' }} 
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              style={{ 
+                width: '100%', 
+                padding: '1.25rem', 
+                borderRadius: '16px', 
+                background: '#3b82f6', 
+                color: 'white', 
+                fontWeight: 800, 
+                fontSize: '1rem',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 15px 30px -5px rgba(59, 130, 246, 0.4)'
+              }}
+            >
+              {loading ? (
+                <div style={{ width: '20px', height: '20px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              ) : (
+                <><Lock size={20} /> Authorize Session</>
+              )}
+            </button>
+          </form>
         </div>
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label className="label">Admin ID</label>
-            <input type="text" value={username} onChange={e => setUsername(e.target.value)} required style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border)' }} />
-          </div>
-          <div className="form-group">
-            <label className="label">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border)' }} />
-          </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Lock size={18} style={{ marginRight: '0.5rem' }} />
-            Sign In
-          </button>
-        </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
 const AdminDashboard = ({ setLoggedIn }) => {
-  const { certificates, updateCertificateStatus, deleteCertificate, updateCertificate } = useCertificates();
+  const navigate = useNavigate();
+  const { certificates, updateCertificateStatus, deleteCertificate } = useCertificates();
   const { users, updateUser, deleteUser } = useUsers();
+  const [sysStats, setSysStats] = useState({ users: 0, certificates: 0, nodes: 14, status: 'Healthy' });
   
-  const handleEditCert = (cert) => {
-    const newOwner = prompt("Edit Owner Name:", cert.owner);
-    const newZone = prompt("Edit Zone:", cert.zone);
-    const newArea = prompt("Edit Area:", cert.area);
-    if (newOwner || newZone || newArea) {
-      updateCertificate(cert.id, {
-        owner: newOwner || cert.owner,
-        zone: newZone || cert.zone,
-        area: newArea || cert.area
-      });
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("tdr_admin_token");
+    setLoggedIn(false);
   }
   
   useEffect(() => {
     const token = localStorage.getItem("tdr_admin_token");
-    
-    // Automatically log out if no token exists in local storage
-    if (!token) {
-        setLoggedIn(false);
-        return;
-    }
+    if (!token) return;
 
-    // Ping the backend using the exact provided snippet to verify authorization
-    fetch(`${import.meta.env.VITE_API_URL}/admin/data`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    api.get('/api/admin/data', {
+      headers: { Authorization: `Bearer ${token}` }
     })
-    .then(res => {
-        if (!res.ok) {
-            alert("Session expired or Unauthorized API access!");
-            localStorage.removeItem("tdr_admin_token");
-            setLoggedIn(false);
-        }
+    .then(data => {
+      setSysStats({
+        users: data.stats?.total_users || users.length,
+        certificates: data.stats?.total_certs || certificates.length,
+        nodes: 14,
+        status: 'Operational'
+      });
     })
-    .catch(err => {
-        console.error("Dashboard secure ping failed", err);
-    });
-  }, [setLoggedIn]);
+    .catch(err => console.error("Dashboard link fail", err));
+  }, [users.length, certificates.length]);
+
+  const statCards = [
+    { label: 'Blockchain TDR Assets', value: sysStats.certificates.toString(), icon: <FileText size={24} />, color: '#3b82f6' },
+    { label: 'Registered Participants', value: sysStats.users.toString(), icon: <Users size={24} />, color: '#10b981' },
+    { label: 'Network Consensus Nodes', value: sysStats.nodes.toString(), icon: <Server size={24} />, color: '#f59e0b' },
+    { label: 'Ledger Growth (Blocks)', value: '#48,921', icon: <Database size={24} />, color: '#8b5cf6' },
+  ];
   
   return (
-    <div style={{ minHeight: '100vh', padding: '2rem', backgroundColor: '#f8f9fa' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
-        <h1 className="page-title" style={{ margin: 0 }}><LayoutDashboard /> System Admin Base</h1>
-        <div style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--success-bg)', color: 'var(--success)', borderRadius: '1rem', display: 'flex', alignItems: 'center' }}>
-           <UserCheck size={18} style={{ marginRight: '0.5rem' }}/> 
-           Admin Session Active
+    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+      <header style={{ height: '80px', background: 'white', borderBottom: '1px solid #f1f5f9', position: 'sticky', top: 0, zIndex: 100, padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+           <button onClick={() => navigate('/')} style={{ background: '#f1f5f9', border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+             <ArrowLeft size={18} color="#64748b" />
+           </button>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+             <Shield size={28} color="#3b82f6" />
+             <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>Authority <span style={{ color: '#3b82f6' }}>Command</span></h1>
+           </div>
         </div>
-      </div>
-      
-      
-      <div className="card" style={{ marginBottom: '2rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
-        <div className="card-header">
-          <h2 style={{ margin: 0 }}>Global Certificate Control</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#ecfdf5', color: '#059669', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 800 }}>
+             <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 10px #10b981' }} />
+             SECURE NODE: 0x-A42
+           </div>
+           <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+             <LogOut size={18} /> Terminate
+           </button>
         </div>
-        <div className="card-body" style={{ padding: 0, overflowX: 'auto' }}>
-           <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th>TDR Reference ID</th>
-                  <th>Uploader (Client Name)</th>
-                  <th>Client Proof ID (Aadhaar)</th>
-                  <th>Zone & Area Details</th>
-                  <th>Current Protocol Status</th>
-                  <th>Override Controls</th>
-                </tr>
-              </thead>
-              <tbody>
-                {certificates.map((tdr, i) => (
-                  <tr key={tdr.id || i}>
-                    <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{tdr.id}</td>
-                    <td style={{ fontWeight: 500 }}>
-                      {tdr.owner}
-                      {tdr.filepath && (
-                         <a 
-                           href={`${import.meta.env.VITE_API_URL.replace('/api', '')}${tdr.filepath}`} 
-                           target="_blank" 
-                           rel="noreferrer"
-                           style={{ marginLeft: '10px', color: '#666', textDecoration: 'none' }}
-                           title="View uploaded document"
-                         >
-                           <ExternalLink size={14} />
-                         </a>
-                      )}
-                    </td>
-                    <td style={{ color: 'var(--text-muted)' }}>{tdr.aadhaar || 'N/A'}</td>
-                    <td>{tdr.zone} <br/> <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)'}}>{tdr.area}</span></td>
-                    <td>
-                      <span className={`status-badge status-${tdr.status.toLowerCase()}`}>
-                        {tdr.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: tdr.status === 'Verified' ? 'var(--success-bg)' : undefined, color: tdr.status === 'Verified' ? 'var(--success)' : undefined }}
-                          onClick={() => updateCertificateStatus(tdr.id, 'Verified')}
-                          disabled={tdr.status === 'Verified'}
-                        >
-                          Approve
-                        </button>
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: tdr.status === 'Rejected' ? 'var(--danger-bg)' : undefined, color: tdr.status === 'Rejected' ? 'var(--danger)' : undefined }}
-                          onClick={() => updateCertificateStatus(tdr.id, 'Rejected')}
-                          disabled={tdr.status === 'Rejected'}
-                        >
-                          Reject
-                        </button>
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#e2e8f0' }}
-                          onClick={() => handleEditCert(tdr)}
-                        >
-                          Edit
-                        </button>
-                        {tdr.filepath && (
-                          <button 
-                             className="btn-secondary" 
-                             style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#edf2f7' }}
-                             onClick={() => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${tdr.filepath}`, '_blank')}
-                          >
-                             View Doc
-                          </button>
-                        )}
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)' }}
-                          onClick={() => { if(window.confirm('Delete this certificate permanently?')) deleteCertificate(tdr.id); }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-        </div>
-      </div>
-      <div className="card" style={{ marginBottom: '2rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
-        <div className="card-header">
-          <h2 style={{ margin: 0 }}>Registered User Profiles</h2>
-        </div>
-        <div className="card-body" style={{ padding: 0, overflowX: 'auto' }}>
-           <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th>User ID</th>
-                  <th>Full Name</th>
-                  <th>Mobile Contact</th>
-                  <th>Email Address</th>
-                  <th>Account Status</th>
-                  <th>Administrative Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u, i) => (
-                  <tr key={u.id || i}>
-                    <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{u.id}</td>
-                    <td style={{ fontWeight: 500 }}>{u.name}</td>
-                    <td>{u.mobile}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      <span className={`status-badge status-${u.status === 'Active' ? 'verified' : 'rejected'}`}>
-                        {u.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: u.status === 'Suspended' ? 'var(--success-bg)' : undefined, color: u.status === 'Suspended' ? 'var(--success)' : undefined }}
-                          onClick={() => updateUser(u.id, { status: u.status === 'Active' ? 'Suspended' : 'Active' })}
-                        >
-                          {u.status === 'Active' ? 'Suspend Access' : 'Restore Access'}
-                        </button>
-                        <button 
-                          className="btn-secondary" 
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--danger-bg)', color: 'var(--danger)' }}
-                          onClick={() => { if(window.confirm('Delete user profile completely?')) deleteUser(u.id); }}
-                        >
-                          Delete User
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-        </div>
-      </div>
+      </header>
 
-      <div className="card" style={{ marginBottom: '2rem', maxWidth: '1200px', margin: '0 auto 2rem' }}>
-        <div className="card-header">
-          <h2 style={{ margin: 0 }}>Electronic Document Vault</h2>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem' }}>
+        <div style={{ marginBottom: '3rem' }}>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>Network Intelligence</h2>
+          <p style={{ color: '#64748b', fontSize: '1.1rem' }}>Global administrative oversight of e-TDR Distributed Ledger Protocol.</p>
         </div>
-        <div className="card-body" style={{ padding: 0 }}>
-           <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th>TDR Reference</th>
-                  <th>Filename</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {certificates.filter(c => c.filepath).map((c, i) => (
-                  <tr key={c.id || i}>
-                    <td style={{ fontWeight: 600 }}>{c.id}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{c.filename || 'uploaded_document.pdf'}</td>
-                    <td>
-                       <div style={{ display: 'flex', gap: '1rem' }}>
-                          <button 
-                            className="btn-secondary" 
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#ebf8ff', color: '#2b6cb0' }}
-                            onClick={() => window.open(`${import.meta.env.VITE_API_URL.replace('/api', '')}${c.filepath}`, '_blank')}
-                          >
-                             <FileSearch size={16} /> Open Proof
-                          </button>
-                          <button 
-                            className="btn-secondary" 
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff5f5', color: '#c53030' }}
-                            onClick={() => { if(window.confirm('Purge this document from server?')) deleteCertificate(c.id); }}
-                          >
-                             <Trash2 size={16} /> Purge
-                          </button>
-                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-           </table>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+          {statCards.map((s, i) => (
+            <motion.div 
+              key={i}
+              whileHover={{ y: -5 }}
+              className="card"
+              style={{ padding: '2rem', border: 'none', background: 'white' }}
+            >
+              <div style={{ color: s.color, marginBottom: '1.5rem' }}>{s.icon}</div>
+              <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 700, marginBottom: '0.5rem' }}>{s.label}</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a' }}>{s.value}</div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="card" style={{ border: 'none', background: 'white', overflow: 'hidden' }}>
+              <div className="card-header" style={{ padding: '1.5rem 2rem', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                   <FileSearch size={20} color="#3b82f6" /> Asset Ledger
+                </h3>
+                <button className="btn-secondary" style={{ fontSize: '0.8rem' }}>Export Chain Manifest</button>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', textAlign: 'left' }}>
+                      <th style={{ padding: '1rem 2rem', fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>UUID</th>
+                      <th style={{ padding: '1rem 2rem', fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Owner Details</th>
+                      <th style={{ padding: '1rem 2rem', fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Region</th>
+                      <th style={{ padding: '1rem 2rem', fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Status</th>
+                      <th style={{ padding: '1rem 2rem', fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase' }}>Command</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {certificates.map(c => (
+                      <tr key={c.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '1.5rem 2rem', fontFamily: 'monospace', fontWeight: 700, color: '#3b82f6' }}>#{c.id.toString().slice(0,8)}</td>
+                        <td style={{ padding: '1.5rem 2rem' }}>
+                           <div style={{ fontWeight: 800, color: '#0f172a' }}>{c.owner}</div>
+                           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{c.aadhaar}</div>
+                        </td>
+                        <td style={{ padding: '1.5rem 2rem' }}>
+                           <div style={{ fontWeight: 700 }}>{c.zone}</div>
+                           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{c.area} SQFT</div>
+                        </td>
+                        <td style={{ padding: '1.5rem 2rem' }}>
+                           <span style={{ 
+                             padding: '0.4rem 0.8rem', 
+                             borderRadius: '50px', 
+                             fontSize: '0.75rem', 
+                             fontWeight: 800,
+                             background: c.status === 'Verified' ? '#ecfdf5' : '#fff7ed',
+                             color: c.status === 'Verified' ? '#059669' : '#c2410c'
+                           }}>{c.status}</span>
+                        </td>
+                        <td style={{ padding: '1.5rem 2rem' }}>
+                           <div style={{ display: 'flex', gap: '0.5rem' }}>
+                             <button 
+                               onClick={() => updateCertificateStatus(c.id, 'Verified')}
+                               style={{ background: '#0f172a', border: 'none', color: 'white', padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                             >Verify</button>
+                             <button 
+                               onClick={() => deleteCertificate(c.id)}
+                               style={{ background: '#fee2e2', border: 'none', color: '#ef4444', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer' }}
+                             ><Trash2 size={16} /></button>
+                           </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="card" style={{ border: 'none', background: 'white' }}>
+               <div className="card-header" style={{ padding: '1.5rem 2rem', background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Users size={20} color="#3b82f6" /> Participant Directory
+                 </h3>
+               </div>
+               <div className="card-body" style={{ padding: 0 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>
+                      {users.map(u => (
+                        <tr key={u.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '1.25rem 2rem' }}>
+                             <div style={{ fontWeight: 800, color: '#0f172a' }}>{u.name}</div>
+                             <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{u.email}</div>
+                          </td>
+                          <td style={{ padding: '1.25rem 2rem' }}>
+                             <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>FABRIC ID</div>
+                             <div style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>{u.fabric_id || 'unassigned'}</div>
+                          </td>
+                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right' }}>
+                             <button 
+                               onClick={() => updateUser(u.id, { status: u.status === 'Active' ? 'Suspended' : 'Active' })}
+                               style={{ background: u.status === 'Active' ? '#f1f5f9' : '#0f172a', color: u.status === 'Active' ? '#0f172a' : 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+                             >
+                               {u.status === 'Active' ? 'Suspend' : 'Reinstate'}
+                             </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+               </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+             <div className="card" style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', border: 'none', color: 'white' }}>
+                <div style={{ padding: '2rem' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                      <Activity color="#3b82f6" />
+                      <h3 style={{ margin: 0, color: 'white' }}>Service Health</h3>
+                   </div>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      {[
+                        { name: 'Gateway Node 1', status: 'Online', latency: '4ms' },
+                        { name: 'Hyperledger Peer', status: 'Syncing', latency: '12ms' },
+                        { name: 'Identity Service', status: 'Online', latency: '2ms' },
+                        { name: 'Consensus Engine', status: 'Optimal', latency: '1ms' },
+                      ].map(s => (
+                        <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                           <div>
+                              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{s.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Latency: {s.latency}</div>
+                           </div>
+                           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', padding: '2px 8px', borderRadius: '4px' }}>{s.status}</div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
+
+             <div className="card" style={{ border: 'none', background: 'white' }}>
+                <div style={{ padding: '2rem' }}>
+                   <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem' }}>Audit Trail</h3>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      {[
+                        { time: '2m ago', text: 'Admin 0x-A42 signed block #48,920' },
+                        { time: '14m ago', text: 'Identity SMC-UID-09 registered' },
+                        { time: '1h ago', text: 'Channel configuration updated' },
+                      ].map((t, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '1rem' }}>
+                           <div style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%', marginTop: '6px' }} />
+                           <div>
+                              <div style={{ fontSize: '0.85rem', color: '#0f172a', fontWeight: 600 }}>{t.text}</div>
+                              <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{t.time}</div>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
+          </div>
         </div>
       </div>
     </div>
@@ -310,11 +365,23 @@ const AdminDashboard = ({ setLoggedIn }) => {
 const AdminPortal = () => {
     const [loggedIn, setLoggedIn] = useState(false);
     
-    if (!loggedIn) {
-        return <AdminLogin setLoggedIn={setLoggedIn} />;
-    }
-    
-    return <AdminDashboard setLoggedIn={setLoggedIn} />;
+    useEffect(() => {
+      if(localStorage.getItem('tdr_admin_token')) setLoggedIn(true);
+    }, []);
+
+    return (
+      <AnimatePresence mode="wait">
+        {!loggedIn ? (
+          <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+             <AdminLogin setLoggedIn={setLoggedIn} />
+          </motion.div>
+        ) : (
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+             <AdminDashboard setLoggedIn={setLoggedIn} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
 }
 
 export default AdminPortal;

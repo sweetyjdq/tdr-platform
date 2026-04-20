@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CertificateProvider, useCertificates } from './context/CertificateContext';
 import { Shield, LayoutDashboard, UserCheck, Lock } from 'lucide-react';
+import api from './api/client';
 
 const AdminLogin = ({ setLoggedIn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const lowerUser = username.toLowerCase();
-    if((lowerUser === 'admin@tdr.local' || lowerUser === 'admin@trd.local') && password === 'admin@123') {
+    try {
+      const data = await api.post('/api/login', { username, password });
+      localStorage.setItem('tdr_admin_token', data.token);
       setLoggedIn(true);
-    } else {
-      alert('Invalid credentials! (hint: admin@tdr.local / admin@123)');
+    } catch (err) {
+      alert(`Invalid credentials: ${err.message}`);
     }
   }
   

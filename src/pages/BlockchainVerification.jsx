@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, ShieldCheck, List, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ShieldCheck, List, CheckCircle, Activity, Database } from 'lucide-react';
 
 const BlockchainVerification = () => {
   const [activeTab, setActiveTab] = useState('verify'); // verify, list
@@ -22,151 +23,179 @@ const BlockchainVerification = () => {
         </h1>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem' }}>
         <button 
           style={{ 
-            padding: '1rem 2rem', 
             background: 'none', 
             border: 'none', 
-            borderBottom: activeTab === 'verify' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'verify' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'verify' ? '600' : '400',
-            fontSize: '1.125rem',
+            padding: '1rem 0',
+            color: activeTab === 'verify' ? '#3b82f6' : '#94a3b8',
+            fontWeight: 800,
+            fontSize: '1.25rem',
+            borderBottom: activeTab === 'verify' ? '4px solid #3b82f6' : '4px solid transparent',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: '0.75rem',
+            transition: 'all 0.3s'
           }}
           onClick={() => setActiveTab('verify')}
         >
-          <Search size={20} />
-          Verify Document
+          <Search size={22} />
+          Protocol Verification
         </button>
         <button 
           style={{ 
-            padding: '1rem 2rem', 
             background: 'none', 
             border: 'none', 
-            borderBottom: activeTab === 'list' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'list' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'list' ? '600' : '400',
-            fontSize: '1.125rem',
+            padding: '1rem 0',
+            color: activeTab === 'list' ? '#3b82f6' : '#94a3b8',
+            fontWeight: 800,
+            fontSize: '1.25rem',
+            borderBottom: activeTab === 'list' ? '4px solid #3b82f6' : '4px solid transparent',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: '0.75rem',
+            transition: 'all 0.3s'
           }}
           onClick={() => setActiveTab('list')}
         >
-          <List size={20} />
-          TDR Public Registry
+          <List size={22} />
+          Public TDR Ledger
         </button>
       </div>
 
-      {activeTab === 'verify' && (
-        <div className="grid gap-6" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
-          <div className="card">
-            <div className="card-header">
-              <h2>Verify Document Integrity (API: /verify-document)</h2>
-            </div>
-            <div className="card-body">
-              <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                Enter the TxHash or upload the document to verify its authenticity against the SMC Blockchain Ledger.
-              </p>
-              
-              <form onSubmit={handleVerify}>
-                <div className="form-group">
-                  <label className="label">Transaction Hash / Document ID</label>
-                  <input type="text" placeholder="0x..." required />
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0', gap: '1rem' }}>
-                  <div style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }}></div>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>OR</span>
-                  <div style={{ height: '1px', flex: 1, backgroundColor: 'var(--border)' }}></div>
-                </div>
-
-                <div className="form-group">
-                  <label className="label">Re-upload Document for Verification</label>
-                  <input type="file" />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                  <button type="submit" className="btn-primary" disabled={verifyStatus === 'loading'}>
-                    {verifyStatus === 'loading' ? 'Verifying Nodes...' : 'Verify on Blockchain'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {verifyStatus === 'success' && (
-            <div className="card" style={{ border: '2px solid var(--success)' }}>
-              <div className="card-header" style={{ backgroundColor: 'var(--success-bg)', borderBottom: '1px solid var(--success)' }}>
-                <h2 style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle size={20} />
-                  Document Verified Authentic
+      <AnimatePresence mode="wait">
+        {activeTab === 'verify' && (
+          <motion.div 
+            key="verify"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="grid gap-8" 
+            style={{ gridTemplateColumns: '1fr 1fr' }}
+          >
+            <div className="card" style={{ border: 'none', background: 'white', boxShadow: '0 20px 40px rgba(0,0,0,0.05)' }}>
+              <div className="card-header" style={{ padding: '2rem 1.5rem', background: '#f8fafc' }}>
+                <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <ShieldCheck size={24} color="#3b82f6" />
+                  Anchor Validator
                 </h2>
               </div>
-              <div className="card-body">
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Block Hash</div>
-                  <div style={{ fontFamily: 'monospace', fontWeight: 600 }}>0x8f2a9c3d4b6e7f8a1c2d3e4f5a6b7c8d</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Timestamp</div>
-                    <div style={{ fontWeight: 500 }}>Oct 24, 2023 14:32 IST</div>
+              <div className="card-body" style={{ padding: '2.5rem' }}>
+                <form onSubmit={handleVerify}>
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <label className="label" style={{ color: '#64748b', fontSize: '0.75rem', letterSpacing: '0.1em' }}>TRANSACTION HASH / DOC ID</label>
+                    <input type="text" placeholder="0x..." style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem' }} required />
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mined By Node</div>
-                    <div style={{ fontWeight: 500 }}>SMC-Validator-04</div>
+                  
+                  <div style={{ position: 'relative', margin: '2.5rem 0', textAlign: 'center' }}>
+                    <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0' }} />
+                    <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '0 1rem', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>CRYPTO HASH VERIFICATION</span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Original Owner</div>
-                    <div style={{ fontWeight: 500 }}>Ramesh Kumar</div>
+
+                  <div className="form-group">
+                    <label className="label" style={{ color: '#64748b', fontSize: '0.75rem', letterSpacing: '0.1em' }}>BINARY UPLOAD</label>
+                    <div style={{ border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '2rem', textAlign: 'center', background: '#f8fafc' }}>
+                       <input type="file" style={{ cursor: 'pointer' }} />
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>TDR Link</div>
-                    <div style={{ fontWeight: 500, color: 'var(--primary)' }}>TDR-SMC-8492</div>
-                  </div>
-                </div>
+
+                  <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '2.5rem', padding: '1.2rem', borderRadius: '12px', fontSize: '1.1rem', background: '#3b82f6', boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)' }}>
+                    {verifyStatus === 'loading' ? 'Polling Nodes...' : 'Execute Consensus Check'}
+                  </button>
+                </form>
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {activeTab === 'list' && (
-        <div className="card">
-          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2>Public TDR Ledger (API: /list-tdr)</h2>
-            <button className="btn-secondary">Export CSV</button>
-          </div>
-          <div className="card-body" style={{ padding: 0 }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>TDR Certificate ID</th>
-                  <th>Current Owner (Public Key)</th>
-                  <th>Area (Sq.M)</th>
-                  <th>Zone Issued</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3, 4, 5].map((item) => (
-                  <tr key={item}>
-                    <td style={{ fontWeight: 500, color: 'var(--primary)' }}>TDR-SMC-{8000 + item * 14}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>0x{Math.random().toString(16).substr(2, 8)}...{Math.random().toString(16).substr(2, 4)}</td>
-                    <td>{Math.floor(Math.random() * 5000) + 500}</td>
-                    <td>{['R1', 'R2', 'C1'][Math.floor(Math.random() * 3)]}</td>
-                    <td><span className="status-badge status-verified">Active</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+            <div style={{ position: 'relative' }}>
+               {verifyStatus === 'success' ? (
+                 <motion.div 
+                   initial={{ scale: 0.9, opacity: 0 }}
+                   animate={{ scale: 1, opacity: 1 }}
+                   className="card" 
+                   style={{ height: '100%', border: 'none', background: 'linear-gradient(135deg, #0f172a, #1e293b)' }}
+                 >
+                   <div style={{ padding: '3rem', color: 'white' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#10b981', marginBottom: '2rem' }}>
+                         <CheckCircle size={32} />
+                         <h2 style={{ color: 'white', margin: 0 }}>Certificate Validated</h2>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                         <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '16px' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Immutable Block Hash</div>
+                            <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#e2e8f0', wordBreak: 'break-all' }}>0x821FA94...3BCC1</div>
+                         </div>
+
+                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                               <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Mined At</div>
+                               <div style={{ fontWeight: 700 }}>24 APR 2026, 12:44</div>
+                            </div>
+                            <div>
+                               <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Consensus Level</div>
+                               <div style={{ fontWeight: 700, color: '#10b981' }}>100% (14/14 Nodes)</div>
+                            </div>
+                            <div>
+                               <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Certified Owner</div>
+                               <div style={{ fontWeight: 700 }}>Ramesh Kumar (SMC-294)</div>
+                            </div>
+                            <div>
+                               <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>TDR ID</div>
+                               <div style={{ fontWeight: 700, color: '#3b82f6' }}>SMC-TDR-8429</div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                 </motion.div>
+               ) : (
+                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '24px' }}>
+                    <div style={{ textAlign: 'center' }}>
+                       <Activity size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                       <p>Awaiting Protocol Execution</p>
+                    </div>
+                 </div>
+               )}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'list' && (
+          <motion.div 
+            key="list"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="card"
+            style={{ border: 'none', background: 'white', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.04)' }}
+          >
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', padding: '2rem', background: '#f8fafc' }}>
+               <h2 style={{ margin: 0 }}>Verified Asset Ledger</h2>
+               <button onClick={() => navigate('/services')} className="btn-primary" style={{ background: '#0f172a', padding: '0.6rem 1.5rem', borderRadius: '10px' }}>Apply for e-TDR</button>
+            </div>
+            <div style={{ padding: '0' }}>
+               <table className="data-table" style={{ borderSpacing: '0' }}>
+                 <thead style={{ background: '#f1f5f9' }}>
+                   <tr>
+                     <th style={{ padding: '1.5rem' }}>Asset ID (TDR)</th>
+                     <th>Public Key (Owner)</th>
+                     <th>Allocation (Sq.M)</th>
+                     <th>Channel / Node</th>
+                     <th style={{ textAlign: 'center' }}>Blockchain Status</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '5rem', color: '#94a3b8' }}>
+                         <Database size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                         <p style={{ fontWeight: 600 }}>Synchronizing Ledger States... 0 items found</p>
+                      </td>
+                    </tr>
+                 </tbody>
+               </table>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
